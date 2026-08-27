@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phishing Awareness Quiz</title>
+<style>
+  :root {
+    --navy: #141B33;
+    --navy2: #1E2761;
+    --alert: #E63946;
+    --off: #F4F5F8;
+    --ink: #141B33;
+    --muted: #6B7280;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Calibri, Arial, sans-serif;
+    background: var(--off);
+    color: var(--ink);
+    display: flex;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+  .card {
+    background: #fff;
+    max-width: 680px;
+    width: 100%;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(20,27,51,0.12);
+    overflow: hidden;
+  }
+  header {
+    background: var(--navy);
+    color: #fff;
+    padding: 28px 32px;
+  }
+  header h1 { margin: 0 0 6px; font-size: 22px; }
+  header p { margin: 0; color: #B9C2E0; font-size: 14px; }
+  #progress-track {
+    height: 6px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 4px;
+    margin-top: 16px;
+    overflow: hidden;
+  }
+  #progress-bar {
+    height: 100%;
+    background: var(--alert);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  main { padding: 32px; min-height: 260px; }
+  .q-count { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .q-prompt { font-size: 18px; font-weight: 600; margin: 0 0 20px; line-height: 1.4; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    text-align: left;
+    padding: 14px 16px;
+    border: 1.5px solid #E3E6EF;
+    border-radius: 10px;
+    background: var(--off);
+    cursor: pointer;
+    font-size: 14.5px;
+    color: var(--ink);
+    transition: all 0.15s ease;
+  }
+  .option:hover:not(.locked) { border-color: var(--navy2); }
+  .option.correct { background: #E7F6EC; border-color: #2FA84F; color: #1B5E32; font-weight: 600; }
+  .option.incorrect { background: #FCEAEC; border-color: var(--alert); color: #A3222F; font-weight: 600; }
+  .option.locked { cursor: default; opacity: 0.75; }
+  .feedback {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: var(--off);
+    font-size: 13.5px;
+    line-height: 1.5;
+    display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback .verdict { font-weight: 700; margin-bottom: 4px; display: block; }
+  .verdict.good { color: #1B5E32; }
+  .verdict.bad { color: #A3222F; }
+  footer {
+    padding: 20px 32px 28px;
+    display: flex;
+    justify-content: flex-end;
+  }
+  button.next {
+    background: var(--navy2);
+    color: #fff;
+    border: none;
+    padding: 11px 22px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: none;
+  }
+  button.next.show { display: inline-block; }
+  button.next:hover { background: var(--navy); }
+  .results { text-align: center; }
+  .results .score { font-size: 52px; font-weight: 800; color: var(--navy2); margin: 8px 0; }
+  .results .label { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  .results button.restart {
+    background: var(--alert);
+    color: #fff;
+    border: none;
+    padding: 12px 26px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <header>
+    <h1>🎣 Phishing Awareness Quiz</h1>
+    <p>10 questions — spot the red flags, identify the tactic, check what you've learned.</p>
+    <div id="progress-track"><div id="progress-bar"></div></div>
+  </header>
+  <main id="quiz-main"></main>
+  <footer>
+    <button class="next" id="next-btn">Next →</button>
+  </footer>
+</div>
+
+<script>
+const questions = [
+  {
+    prompt: "An email from \"IT-Support@yourcompany-helpdesk.net\" says your password expires in 1 hour and includes a login link. What's the biggest red flag?",
+    options: [
+      "The domain doesn't match your real company's domain",
+      "It mentions your password",
+      "It was sent during work hours",
+      "It has a subject line at all"
+    ],
+    correct: 0,
+    explain: "Legitimate IT emails come from your actual corporate domain. A lookalike domain plus manufactured urgency is a classic credential-harvesting setup."
+  },
+  {
+    prompt: "Which of these is true about the padlock icon (HTTPS) in a browser address bar?",
+    options: [
+      "It proves the site is legitimate",
+      "It only means the connection is encrypted — attackers can get one too",
+      "It means the site has been verified by your bank",
+      "It's only shown on government websites"
+    ],
+    correct: 1,
+    explain: "HTTPS/padlocks are trivially available to attackers via free certificates. It protects data in transit, not the trustworthiness of who's on the other end."
+  },
+  {
+    prompt: "A caller claiming to be your CEO (voice sounds right) urgently asks you to wire money to a new vendor today. What tactic is this?",
+    options: [
+      "Whaling / vishing using authority and urgency",
+      "Pharming",
+      "Clone phishing",
+      "Quishing"
+    ],
+    correct: 0,
+    explain: "This combines voice phishing (vishing, possibly AI-cloned) with authority impersonation and urgency — the pattern used in the UK energy firm case that cost $243,000."
+  },
+  {
+    prompt: "You get a text saying your package is \"held at customs\" with a tracking link you don't recognize. This is an example of:",
+    options: [
+      "Whaling",
+      "Smishing",
+      "Pharming",
+      "Spear phishing"
+    ],
+    correct: 1,
+    explain: "SMS-based phishing is called smishing — fake delivery, billing, or account alerts sent by text to get you to click quickly on a small screen."
+  },
+  {
+    prompt: "What's the safest way to verify a suspicious request that claims to be from your bank?",
+    options: [
+      "Reply directly to the email asking if it's real",
+      "Click the link and check if the page looks legitimate",
+      "Call the bank using the number on your card or their official website",
+      "Forward it to a coworker for a second opinion"
+    ],
+    correct: 2,
+    explain: "Always verify through a channel you already trust and control — never a number or link supplied by the suspicious message itself."
+  },
+  {
+    prompt: "A QR code on a parking meter leads to a fake payment site when scanned. This attack is called:",
+    options: [
+      "Quishing",
+      "Vishing",
+      "Whaling",
+      "Clone phishing"
+    ],
+    correct: 0,
+    explain: "QR code phishing (\"quishing\") has grown fast because QR codes hide the destination URL until after you've already scanned."
+  },
+  {
+    prompt: "In the Google/Facebook $100M+ scam, how did the attacker gain the companies' trust?",
+    options: [
+      "He hacked their servers directly",
+      "He impersonated a real hardware vendor they already paid, using forged invoices",
+      "He posed as a government auditor",
+      "He used a fake job offer"
+    ],
+    correct: 1,
+    explain: "Evaldas Rimasauskas set up a fake company matching a real Asian hardware vendor's name and sent forged invoices — a textbook Business Email Compromise (BEC) attack, no hacking required."
+  },
+  {
+    prompt: "Which social engineering tactic relies on making you feel special or lucky rather than scared?",
+    options: [
+      "Urgency & fear",
+      "Authority",
+      "Scarcity / reward",
+      "Trust & familiarity"
+    ],
+    correct: 2,
+    explain: "Scarcity and reward tactics (limited-time prizes, exclusive offers) work by making you excited enough to skip your normal caution."
+  },
+  {
+    prompt: "You already clicked a suspicious link and entered your password. What should you do FIRST?",
+    options: [
+      "Wait to see if anything bad happens",
+      "Change the password for that account immediately, and anywhere it was reused",
+      "Delete the email so no one else sees it",
+      "Restart your computer"
+    ],
+    correct: 1,
+    explain: "Speed matters most. Reset the affected password (and anywhere it was reused) right away, then report it — don't wait to be certain something bad has already happened."
+  },
+  {
+    prompt: "Why does enabling multi-factor authentication (MFA) help even if your password gets phished?",
+    options: [
+      "It makes your password longer automatically",
+      "It requires a second proof of identity the attacker likely doesn't have",
+      "It blocks all phishing emails from reaching you",
+      "It encrypts your emails"
+    ],
+    correct: 1,
+    explain: "MFA adds a second factor (a code, a device, a biometric) that a phisher who only stole your password typically can't produce, stopping most account takeovers cold."
+  }
+];
+
+let current = 0;
+let score = 0;
+let answered = false;
+
+const main = document.getElementById("quiz-main");
+const nextBtn = document.getElementById("next-btn");
+const progressBar = document.getElementById("progress-bar");
+
+function renderQuestion() {
+  answered = false;
+  nextBtn.classList.remove("show");
+  const q = questions[current];
+  progressBar.style.width = `${(current / questions.length) * 100}%`;
+
+  main.innerHTML = `
+    <div class="q-count">Question ${current + 1} of ${questions.length}</div>
+    <p class="q-prompt">${q.prompt}</p>
+    <div class="options">
+      ${q.options.map((opt, i) => `<button class="option" data-i="${i}">${opt}</button>`).join("")}
+    </div>
+    <div class="feedback" id="feedback"></div>
+  `;
+
+  document.querySelectorAll(".option").forEach(btn => {
+    btn.addEventListener("click", () => selectAnswer(parseInt(btn.dataset.i)));
+  });
+}
+
+function selectAnswer(i) {
+  if (answered) return;
+  answered = true;
+  const q = questions[current];
+  const opts = document.querySelectorAll(".option");
+  opts.forEach(b => b.classList.add("locked"));
+
+  if (i === q.correct) {
+    score++;
+    opts[i].classList.add("correct");
+  } else {
+    opts[i].classList.add("incorrect");
+    opts[q.correct].classList.add("correct");
+  }
+
+  const fb = document.getElementById("feedback");
+  const verdictText = i === q.correct ? "Correct!" : "Not quite.";
+  const verdictClass = i === q.correct ? "good" : "bad";
+  fb.innerHTML = `<span class="verdict ${verdictClass}">${verdictText}</span>${q.explain}`;
+  fb.classList.add("show");
+
+  nextBtn.classList.add("show");
+  nextBtn.textContent = current === questions.length - 1 ? "See results →" : "Next →";
+}
+
+function renderResults() {
+  progressBar.style.width = "100%";
+  nextBtn.classList.remove("show");
+  const pct = Math.round((score / questions.length) * 100);
+  let label = "Solid grasp of the basics.";
+  if (pct === 100) label = "Perfect score — you'd catch these in the wild.";
+  else if (pct >= 70) label = "Good instincts — review the ones you missed.";
+  else if (pct < 50) label = "Worth another pass through the training module.";
+
+  main.innerHTML = `
+    <div class="results">
+      <div class="q-count">Quiz Complete</div>
+      <div class="score">${score}/${questions.length}</div>
+      <div class="label">${label}</div>
+      <button class="restart" onclick="restart()">Try Again</button>
+    </div>
+  `;
+}
+
+function restart() {
+  current = 0;
+  score = 0;
+  renderQuestion();
+}
+
+nextBtn.addEventListener("click", () => {
+  current++;
+  if (current < questions.length) {
+    renderQuestion();
+  } else {
+    renderResults();
+  }
+});
+
+renderQuestion();
+</script>
+</body>
+</html>
